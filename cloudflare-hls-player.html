@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HLS Stream Player - Astro Channel 711</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .player-wrapper {
+            position: relative;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #c33;
+        }
+
+        .info {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .info h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .setup-steps {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .setup-steps ol {
+            margin-left: 20px;
+        }
+
+        .setup-steps li {
+            margin: 15px 0;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #856404;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 HLS Stream Player</h1>
+            <p>Astro Channel 711 - 720p Quality</p>
+        </div>
+
+        <div class="player-wrapper">
+            <video id="video" controls></video>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Loading stream...</div>
+            </div>
+        </div>
+
+        <div id="error-container"></div>
+
+        <div class="info">
+            <h2>📋 Setup Instructions</h2>
+            
+            <div class="success">
+                <strong>✅ Step 1: Deploy Cloudflare Worker</strong>
+            </div>
+
+            <div class="setup-steps">
+                <ol>
+                    <li>Go to <strong>Cloudflare Dashboard</strong> → Select your domain</li>
+                    <li>Click on <strong>"Workers & Pages"</strong> in the left sidebar</li>
+                    <li>Click <strong>"Create Application"</strong> → <strong>"Create Worker"</strong></li>
+                    <li>Give it a name like <span class="highlight">stream-proxy</span></li>
+                    <li>Click <strong>"Deploy"</strong> then <strong>"Edit Code"</strong></li>
+                    <li>Replace all code with the worker code provided in the artifact</li>
+                    <li>Click <strong>"Save and Deploy"</strong></li>
+                    <li>Your worker URL will be something like: <span class="highlight">https://stream-proxy.YOUR-DOMAIN.workers.dev</span></li>
+                </ol>
+            </div>
+
+            <div class="success">
+                <strong>✅ Step 2: Update This HTML File</strong>
+            </div>
+
+            <div class="setup-steps">
+                <p>Replace <span class="highlight">YOUR-WORKER-URL</span> in the code below (line 25):</p>
+                <div class="code-block">const WORKER_URL = 'https://stream-proxy.YOUR-DOMAIN.workers.dev';</div>
+                <p style="margin-top: 15px;">Example:</p>
+                <div class="code-block">const WORKER_URL = 'https://stream-proxy.example.workers.dev';</div>
+            </div>
+
+            <div class="success">
+                <strong>✅ Step 3: Upload & Test</strong>
+            </div>
+
+            <div class="setup-steps">
+                <ol>
+                    <li>Upload this HTML file to your website</li>
+                    <li>Open it in your browser</li>
+                    <li>The stream should start playing automatically!</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ IMPORTANT: Replace this with YOUR Cloudflare Worker URL
+        const WORKER_URL = 'https://stream-proxy.YOUR-DOMAIN.workers.dev';
+        
+        // The original stream URL
+        const STREAM_URL = 'https://linearjitp-playback.astro.com.my/hls-mp4-fp/linear/711/169/video-cif-stream-6.m3u8';
+        
+        // Construct the proxied URL
+        const proxiedUrl = `${WORKER_URL}?url=${encodeURIComponent(STREAM_URL)}`;
+
+        const video = document.getElementById('video');
+        const loading = document.getElementById('loading');
+        const errorContainer = document.getElementById('error-container');
+
+        function showError(message) {
+            loading.style.display = 'none';
+            errorContainer.innerHTML = `
+                <div class="error">
+                    <strong>⚠️ Error:</strong><br>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        // Check if Worker URL has been configured
+        if (WORKER_URL.includes('YOUR-DOMAIN')) {
+            showError('Please configure your Cloudflare Worker URL in the JavaScript code (line 25)');
+        } else {
+            // Initialize HLS.js
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                });
+
+                hls.loadSource(proxiedUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    hideLoading();
+                    video.play().catch(err => {
+                        console.log('Autoplay prevented, user interaction required');
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        hideLoading();
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                showError('Network error. Please check your Cloudflare Worker configuration.');
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                showError('Media error. Trying to recover...');
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                showError('Fatal error: ' + data.details);
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native HLS support (Safari)
+                video.src = proxiedUrl;
+                video.addEventListener('loadedmetadata', hideLoading);
+                video.addEventListener('error', function() {
+                    showError('Error loading stream');
+                });
+            } else {
+                showError('Your browser does not support HLS streaming');
+            }
+        }
+    </script>
+</body>
+</html>
